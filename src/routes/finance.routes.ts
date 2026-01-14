@@ -8,5 +8,6 @@ router.use(authMiddleware);
 
 router.get('/transactions', FinanceController.getTransactions);
 router.post('/transactions', FinanceController.create);
+router.delete('/transactions/:id', FinanceController.delete);
 
 export default router;

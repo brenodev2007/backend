@@ -10,6 +10,7 @@ import warehouseRoutes from './routes/warehouse.routes';
 import stockRoutes from './routes/stock.routes';
 import financeRoutes from './routes/finance.routes';
 import subscriptionRoutes from './routes/subscription.routes';
+import categoryRoutes from './routes/category.routes';
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use('/api/warehouses', warehouseRoutes);
 app.use('/api/stock', stockRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/subscription', subscriptionRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

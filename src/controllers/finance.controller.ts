@@ -34,4 +34,25 @@ export class FinanceController {
       return res.status(500).json({ error: 'Erro ao criar transação' });
     }
   }
+
+  static async delete(req: AuthRequest, res: Response) {
+    try {
+      const { id } = req.params;
+      const transactionRepository = AppDataSource.getRepository(FinancialTransaction);
+      
+      const result = await transactionRepository.delete({
+        id,
+        user_id: req.userId
+      });
+
+      if (result.affected === 0) {
+        return res.status(404).json({ error: 'Transação não encontrada' });
+      }
+
+      return res.status(204).send();
+    } catch (error) {
+      console.error('Delete transaction error:', error);
+      return res.status(500).json({ error: 'Erro ao deletar transação' });
+    }
+  }
 }
