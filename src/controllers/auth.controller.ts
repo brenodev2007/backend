@@ -110,4 +110,36 @@ export class AuthController {
       return res.status(500).json({ error: 'Erro ao buscar usuário' });
     }
   }
+
+  static async updateProfile(req: AuthRequest, res: Response) {
+    try {
+      const { name, cpf_cnpj, avatar_url } = req.body;
+      const userRepository = AppDataSource.getRepository(User);
+      
+      const user = await userRepository.findOne({ where: { id: req.userId } });
+      if (!user) {
+        return res.status(404).json({ error: 'Usuário não encontrado' });
+      }
+
+      // Update only provided fields
+      if (name !== undefined) user.name = name;
+      if (cpf_cnpj !== undefined) user.cpf_cnpj = cpf_cnpj;
+      if (avatar_url !== undefined) user.avatar_url = avatar_url;
+
+      await userRepository.save(user);
+
+      return res.json({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        cpf_cnpj: user.cpf_cnpj,
+        avatar_url: user.avatar_url,
+        is_pro: user.is_pro,
+        plan: user.plan
+      });
+    } catch (error) {
+      console.error('Update profile error:', error);
+      return res.status(500).json({ error: 'Erro ao atualizar perfil' });
+    }
+  }
 }
