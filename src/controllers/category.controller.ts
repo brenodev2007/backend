@@ -8,6 +8,7 @@ export class CategoryController {
     try {
       const categoryRepository = AppDataSource.getRepository(Category);
       const categories = await categoryRepository.find({
+        where: { user_id: req.userId },
         order: { name: 'ASC' }
       });
       return res.json(categories);
@@ -20,7 +21,10 @@ export class CategoryController {
   static async create(req: AuthRequest, res: Response) {
     try {
       const categoryRepository = AppDataSource.getRepository(Category);
-      const category = categoryRepository.create(req.body);
+      const category = categoryRepository.create({
+        ...req.body,
+        user_id: req.userId
+      });
       await categoryRepository.save(category);
       return res.status(201).json(category);
     } catch (error) {
@@ -34,7 +38,9 @@ export class CategoryController {
       const { id } = req.params;
       const categoryRepository = AppDataSource.getRepository(Category);
       
-      const category = await categoryRepository.findOne({ where: { id } });
+      const category = await categoryRepository.findOne({ 
+        where: { id, user_id: req.userId } 
+      });
       if (!category) {
         return res.status(404).json({ error: 'Categoria não encontrada' });
       }
@@ -54,7 +60,10 @@ export class CategoryController {
       const { id } = req.params;
       const categoryRepository = AppDataSource.getRepository(Category);
       
-      const result = await categoryRepository.delete(id);
+      const result = await categoryRepository.delete({
+        id,
+        user_id: req.userId
+      });
       if (result.affected === 0) {
         return res.status(404).json({ error: 'Categoria não encontrada' });
       }

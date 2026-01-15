@@ -6,6 +6,7 @@ const router = Router();
 
 router.use(authMiddleware);
 
+router.get('/summary', FinanceController.getSummary);
 router.get('/transactions', FinanceController.getTransactions);
 router.post('/transactions', FinanceController.create);
 router.delete('/transactions/:id', FinanceController.delete);

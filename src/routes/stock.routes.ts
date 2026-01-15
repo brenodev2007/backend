@@ -9,5 +9,7 @@ router.use(authMiddleware);
 router.get('/balances', StockController.getBalances);
 router.get('/movements', StockController.getMovements);
 router.post('/movements', StockController.createMovement);
+router.put('/movements/:id', StockController.updateMovement);
+router.delete('/movements/:id', StockController.deleteMovement);
 
 export default router;

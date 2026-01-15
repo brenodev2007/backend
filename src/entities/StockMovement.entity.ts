@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { User } from './User.entity';
 import { Product } from './Product.entity';
+import { Warehouse } from './Warehouse.entity';
 
 export enum MovementType {
   IN = 'IN',
@@ -54,4 +55,12 @@ export class StockMovement {
   @ManyToOne(() => User, user => user.movements)
   @JoinColumn({ name: 'user_id' })
   user: User;
+
+  @ManyToOne(() => Warehouse)
+  @JoinColumn({ name: 'warehouse_from_id' })
+  warehouse_from: Warehouse;
+
+  @ManyToOne(() => Warehouse)
+  @JoinColumn({ name: 'warehouse_to_id' })
+  warehouse_to: Warehouse;
 }
