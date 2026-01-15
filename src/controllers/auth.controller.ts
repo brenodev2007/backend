@@ -58,12 +58,12 @@ export class AuthController {
       const user = await userRepository.findOne({ where: { email } });
 
       if (!user) {
-        return res.status(401).json({ error: 'Nenhum usuário encontrado com este e-mail' });
+        return res.status(401).json({ error: 'Email ou senha incorretos' });
       }
 
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
-        return res.status(401).json({ error: 'Senha incorreta' });
+        return res.status(401).json({ error: 'Email ou senha incorretos' });
       }
 
       const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
