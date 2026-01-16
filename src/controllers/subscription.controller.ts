@@ -19,7 +19,7 @@ export class SubscriptionController {
    */
   static async createSubscription(req: AuthRequest, res: Response) {
     try {
-      const { email, back_url } = req.body;
+      const { email } = req.body;
       const userId = req.userId;
 
       if (!userId) {
@@ -59,8 +59,8 @@ export class SubscriptionController {
           frequency: 14,
           frequency_type: 'days'
         },
-        back_url: back_url || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard?subscription=success`,
-        payer_email: email || user.email
+        payer_email: email || user.email,
+        status: 'authorized'
       });
 
       // Cria ou atualiza registro de assinatura

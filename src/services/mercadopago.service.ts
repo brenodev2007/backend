@@ -12,8 +12,8 @@ export interface PreapprovalPayload {
     frequency: number;
     frequency_type: string;
   };
-  back_url: string;
   payer_email: string;
+  status?: string;
 }
 
 export interface PreapprovalResponse {
