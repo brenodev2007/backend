@@ -1,7 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne } from 'typeorm';
 import { Product } from './Product.entity';
 import { StockMovement } from './StockMovement.entity';
 import { FinancialTransaction } from './FinancialTransaction.entity';
+import { Subscription } from './Subscription.entity';
 
 @Entity('users')
 export class User {
@@ -49,4 +50,7 @@ export class User {
 
   @OneToMany(() => FinancialTransaction, transaction => transaction.user)
   transactions: FinancialTransaction[];
+
+  @OneToOne(() => Subscription, subscription => subscription.user, { nullable: true })
+  subscription: Subscription;
 }

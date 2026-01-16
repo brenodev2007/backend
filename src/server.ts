@@ -9,7 +9,7 @@ import productRoutes from './routes/product.routes';
 import warehouseRoutes from './routes/warehouse.routes';
 import stockRoutes from './routes/stock.routes';
 import financeRoutes from './routes/finance.routes';
-import subscriptionRoutes from './routes/subscription.routes';
+import subscriptionRoutes, { webhookRouter } from './routes/subscription.routes';
 import categoryRoutes from './routes/category.routes';
 
 dotenv.config();
@@ -19,6 +19,9 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Webhook route (antes das outras para não precisar de autenticação)
+app.use('/api/subscription', webhookRouter);
 
 // Routes
 app.use('/api/auth', authRoutes);
