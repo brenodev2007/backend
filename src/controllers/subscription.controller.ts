@@ -56,7 +56,7 @@ export class SubscriptionController {
         auto_recurring: {
           frequency: 1,
           frequency_type: 'months',
-          transaction_amount: 50.00,
+          transaction_amount: 0.01,
           currency_id: 'BRL'
         },
         back_url: backUrl,
@@ -81,7 +81,7 @@ export class SubscriptionController {
       subscription.preapproval_id = preapprovalData.id;
       subscription.plan = 'pro';
       subscription.status = 'trial';
-      subscription.amount = 50.00;
+      subscription.amount = 0.01;
       subscription.currency = 'BRL';
       subscription.billing_cycle = 'monthly';
       subscription.trial_start = new Date();
