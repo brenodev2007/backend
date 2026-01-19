@@ -20,7 +20,7 @@ export class PaymentController {
   static async createPayment(req: AuthRequest, res: Response) {
     try {
       const userId = req.userId;
-      const { plan = 'pro', amount = 0.01 } = req.body;
+      const { plan = 'pro', amount = 10.00 } = req.body;
 
       if (!userId) {
         return res.status(401).json({ error: 'Não autenticado' });
@@ -54,8 +54,9 @@ export class PaymentController {
 
       // URL de webhook (se configurada)
       const webhookUrl = process.env.WEBHOOK_URL;
+      const environment = mercadoPagoService.getEnvironment();
 
-      console.log('Criando preferência de checkout com:');
+      console.log(`[${environment.toUpperCase()}] Criando preferência de checkout com:`);
       console.log('- URLs de retorno:', backUrls);
       console.log('- Webhook URL:', webhookUrl || 'Não configurado');
       console.log('- Email do pagador:', user.email);
@@ -82,7 +83,7 @@ export class PaymentController {
       const isSandbox = mercadoPagoService.isSandboxMode();
       const checkoutUrl = isSandbox ? preference.sandbox_init_point : preference.init_point;
 
-      console.log(`Preferência criada: ${preference.id} (${isSandbox ? 'SANDBOX' : 'PRODUÇÃO'})`);
+      console.log(`Preferência criada: ${preference.id} (${environment.toUpperCase()})`);
       console.log(`Checkout URL: ${checkoutUrl}`);
 
       return res.json({
@@ -90,7 +91,8 @@ export class PaymentController {
         preference_id: preference.id,
         checkout_url: checkoutUrl,
         external_reference: externalReference,
-        sandbox: isSandbox
+        sandbox: isSandbox,
+        environment
       });
     } catch (error: any) {
       console.error('Erro ao criar pagamento:', error);

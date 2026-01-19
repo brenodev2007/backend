@@ -89,17 +89,30 @@ export interface PaymentDetail {
 export class MercadoPagoService {
   private client: AxiosInstance;
   private accessToken: string;
+  private publicKey: string;
   private isSandbox: boolean;
+  private environment: 'development' | 'production';
 
   constructor() {
-    this.accessToken = process.env.MP_ACCESS_TOKEN || '';
+    // Detecta o ambiente
+    this.environment = (process.env.NODE_ENV as 'development' | 'production') || 'development';
+    
+    // Seleciona as credenciais baseado no ambiente
+    if (this.environment === 'production') {
+      this.accessToken = process.env.MP_PROD_ACCESS_TOKEN || '';
+      this.publicKey = process.env.MP_PROD_PUBLIC_KEY || '';
+      this.isSandbox = false;
+      console.log('🟢 MERCADO PAGO: Modo PRODUÇÃO ativado');
+    } else {
+      this.accessToken = process.env.MP_DEV_ACCESS_TOKEN || '';
+      this.publicKey = process.env.MP_DEV_PUBLIC_KEY || '';
+      this.isSandbox = true;
+      console.log('🟡 MERCADO PAGO: Modo DESENVOLVIMENTO (Sandbox) ativado');
+    }
     
     if (!this.accessToken) {
-      throw new Error('MP_ACCESS_TOKEN não configurado');
+      throw new Error(`Credenciais do Mercado Pago não configuradas para ambiente: ${this.environment}`);
     }
-
-    // Detecta se é token de teste (sandbox)
-    this.isSandbox = this.accessToken.startsWith('TEST-');
 
     this.client = axios.create({
       baseURL: 'https://api.mercadopago.com',
@@ -108,6 +121,20 @@ export class MercadoPagoService {
         'Authorization': `Bearer ${this.accessToken}`
       }
     });
+  }
+
+  /**
+   * Retorna o ambiente atual
+   */
+  getEnvironment(): 'development' | 'production' {
+    return this.environment;
+  }
+
+  /**
+   * Retorna a public key do ambiente atual
+   */
+  getPublicKey(): string {
+    return this.publicKey;
   }
 
   // ============================================

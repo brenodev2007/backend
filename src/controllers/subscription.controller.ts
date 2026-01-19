@@ -50,13 +50,16 @@ export class SubscriptionController {
       // URL de retorno completa
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
       const backUrl = `${frontendUrl}/settings`;
+      const environment = mercadoPagoService.getEnvironment();
+
+      console.log(`[${environment.toUpperCase()}] Criando assinatura para usuário: ${user.email}`);
 
       const preapprovalData = await mercadoPagoService.createSubscription({
         reason: 'Assinatura Stock Savvy Pro',
         auto_recurring: {
           frequency: 1,
           frequency_type: 'months',
-          transaction_amount: 0.01,
+          transaction_amount: 10.00,
           currency_id: 'BRL'
         },
         back_url: backUrl,
@@ -81,7 +84,7 @@ export class SubscriptionController {
       subscription.preapproval_id = preapprovalData.id;
       subscription.plan = 'pro';
       subscription.status = 'trial';
-      subscription.amount = 0.01;
+      subscription.amount = 10.00;
       subscription.currency = 'BRL';
       subscription.billing_cycle = 'monthly';
       subscription.trial_start = new Date();
@@ -104,7 +107,8 @@ export class SubscriptionController {
           id: subscription.id,
           status: subscription.status,
           trial_end: subscription.trial_end
-        }
+        },
+        environment
       });
     } catch (error: any) {
       console.error('Erro ao criar assinatura:', error);
