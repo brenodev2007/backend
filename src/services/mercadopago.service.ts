@@ -150,7 +150,8 @@ export class MercadoPagoService {
       const cleanPayload: any = {
         items: payload.items,
         back_urls: payload.back_urls,
-        external_reference: payload.external_reference
+        external_reference: payload.external_reference,
+        statement_descriptor: 'STOCK SAVVY' // Descrição na fatura do cartão
       };
 
       // Adiciona payer se fornecido
@@ -183,8 +184,12 @@ export class MercadoPagoService {
       const response = await this.client.post('/checkout/preferences', cleanPayload);
       return response.data;
     } catch (error: any) {
-      console.error('Erro ao criar preferência de checkout:', error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || 'Erro ao criar preferência de checkout');
+      console.error('=== ERRO DETALHADO MERCADO PAGO ===');
+      console.error('Status:', error.response?.status);
+      console.error('Dados do erro:', JSON.stringify(error.response?.data, null, 2));
+      console.error('Mensagem:', error.message);
+      console.error('===================================');
+      throw new Error(error.response?.data?.message || error.message || 'Erro ao criar preferência de checkout');
     }
   }
 

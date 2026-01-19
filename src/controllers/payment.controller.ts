@@ -56,23 +56,31 @@ export class PaymentController {
       const webhookUrl = process.env.WEBHOOK_URL;
       const environment = mercadoPagoService.getEnvironment();
 
+      // Em sandbox, DEVE usar email de usuário de teste do Mercado Pago
+      const payerEmail = environment === 'development' 
+        ? (process.env.MP_DEV_TEST_USER_EMAIL || user.email)
+        : user.email;
+
       console.log(`[${environment.toUpperCase()}] Criando preferência de checkout com:`);
       console.log('- URLs de retorno:', backUrls);
       console.log('- Webhook URL:', webhookUrl || 'Não configurado');
-      console.log('- Email do pagador:', user.email);
+      console.log('- Email do pagador:', payerEmail);
+      if (environment === 'development') {
+        console.log('⚠️  SANDBOX: Usando email de teste. Configure MP_DEV_TEST_USER_EMAIL no .env');
+      }
 
       // Cria preferência de checkout
       const preference = await mercadoPagoService.createCheckoutPreference({
         items: [
           {
-            title: 'Stock Savvy - Plano Pro (14 dias grátis)',
+            title: 'Stock Savvy - Plano Pro',
             quantity: 1,
             currency_id: 'BRL',
             unit_price: amount
           }
         ],
         payer: {
-          email: user.email
+          email: payerEmail
         },
         external_reference: externalReference,
         back_urls: backUrls,
@@ -186,31 +194,30 @@ export class PaymentController {
                 });
               }
 
-              // Calcula datas
+              // Ativa assinatura imediatamente (sem trial)
               const now = new Date();
-              const trialEnd = new Date();
-              trialEnd.setDate(trialEnd.getDate() + 14);
+              const nextBilling = new Date();
+              nextBilling.setMonth(nextBilling.getMonth() + 1); // Próxima cobrança em 1 mês
 
               subscription.plan = 'pro';
-              subscription.status = 'trial';
+              subscription.status = 'active'; // ATIVO imediatamente
               subscription.amount = paymentDetails.transaction_amount;
               subscription.currency = paymentDetails.currency_id;
-              subscription.billing_cycle = 'one_time';
-              subscription.trial_start = now;
-              subscription.trial_end = trialEnd;
+              subscription.billing_cycle = 'monthly';
               subscription.subscription_start = now;
+              subscription.next_billing_date = nextBilling;
 
               await subscriptionRepository.save(subscription);
 
               // Atualiza usuário
               user.is_pro = true;
               user.plan = 'pro';
-              user.subscription_status = 'trial';
+              user.subscription_status = 'active'; // ATIVO
               await userRepository.save(user);
 
-              console.log(`✅ Assinatura ativada para usuário ${userId}`);
+              console.log(`✅ Assinatura PRO ativada para usuário ${userId}`);
               console.log(`✅ Plano: ${subscription.plan} | Status: ${subscription.status}`);
-              console.log(`✅ Trial até: ${trialEnd.toLocaleDateString('pt-BR')}`);
+              console.log(`✅ Próxima cobrança: ${nextBilling.toLocaleDateString('pt-BR')}`);
             } else {
               console.log(`⚠️ Pagamento não aprovado ou sem valor: ${paymentDetails.status}`);
             }
