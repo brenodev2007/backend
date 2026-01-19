@@ -30,9 +30,7 @@ export interface PreapprovalResponse {
   next_payment_date?: string;
 }
 
-// ============================================
-// INTERFACES - PAGAMENTOS ÚNICOS (CHECKOUT)
-// ============================================
+
 
 export interface CheckoutPreferencePayload {
   items: Array<{
@@ -94,24 +92,41 @@ export class MercadoPagoService {
   private environment: 'development' | 'production';
 
   constructor() {
-    // Detecta o ambiente
-    this.environment = (process.env.NODE_ENV as 'development' | 'production') || 'development';
+    // Detecta o ambiente do Node.js
+    const nodeEnv = (process.env.NODE_ENV as 'development' | 'production') || 'development';
     
-    // Seleciona as credenciais baseado no ambiente
-    if (this.environment === 'production') {
+    // Seleciona as credenciais baseado no NODE_ENV
+    if (nodeEnv === 'production') {
       this.accessToken = process.env.MP_PROD_ACCESS_TOKEN || '';
       this.publicKey = process.env.MP_PROD_PUBLIC_KEY || '';
-      this.isSandbox = false;
-      console.log('🟢 MERCADO PAGO: Modo PRODUÇÃO ativado');
     } else {
       this.accessToken = process.env.MP_DEV_ACCESS_TOKEN || '';
       this.publicKey = process.env.MP_DEV_PUBLIC_KEY || '';
-      this.isSandbox = true;
-      console.log('🟡 MERCADO PAGO: Modo DESENVOLVIMENTO (Sandbox) ativado');
     }
     
     if (!this.accessToken) {
-      throw new Error(`Credenciais do Mercado Pago não configuradas para ambiente: ${this.environment}`);
+      throw new Error(`Credenciais do Mercado Pago não configuradas para ambiente: ${nodeEnv}`);
+    }
+
+    // DETECÇÃO AUTOMÁTICA baseada no prefixo do token
+    // TEST- = Sandbox (credenciais de teste)
+    // APP_USR- = Produção (credenciais reais)
+    const isTestToken = this.accessToken.startsWith('TEST-');
+    const isProdToken = this.accessToken.startsWith('APP_USR-');
+    
+    if (isTestToken) {
+      this.isSandbox = true;
+      this.environment = 'development';
+      console.log('🟡 MERCADO PAGO: Modo SANDBOX (Teste) detectado pelo token TEST-');
+    } else if (isProdToken) {
+      this.isSandbox = false;
+      this.environment = 'production';
+      console.log('🟢 MERCADO PAGO: Modo PRODUÇÃO detectado pelo token APP_USR-');
+    } else {
+      // Fallback para NODE_ENV se o prefixo não for reconhecido
+      this.isSandbox = nodeEnv !== 'production';
+      this.environment = nodeEnv;
+      console.log(`⚠️  MERCADO PAGO: Prefixo de token desconhecido. Usando NODE_ENV=${nodeEnv}`);
     }
 
     this.client = axios.create({
@@ -121,6 +136,8 @@ export class MercadoPagoService {
         'Authorization': `Bearer ${this.accessToken}`
       }
     });
+    
+    console.log(`📌 Configuração final: Environment=${this.environment}, isSandbox=${this.isSandbox}`);
   }
 
   /**

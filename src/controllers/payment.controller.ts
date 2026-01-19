@@ -20,7 +20,7 @@ export class PaymentController {
   static async createPayment(req: AuthRequest, res: Response) {
     try {
       const userId = req.userId;
-      const { plan = 'pro', amount = 10.00 } = req.body;
+      const { plan = 'pro', amount = 1.00 } = req.body;
 
       if (!userId) {
         return res.status(401).json({ error: 'Não autenticado' });

@@ -4,6 +4,7 @@ import { User } from '../entities/User.entity';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import mercadoPagoService from '../services/mercadopago.service';
 
 export class AuthController {
   static async register(req: Request, res: Response) {
@@ -95,6 +96,10 @@ export class AuthController {
         return res.status(404).json({ error: 'Usuário não encontrado' });
       }
 
+      // Get environment info
+      const environment = mercadoPagoService.getEnvironment();
+      const isSandbox = mercadoPagoService.isSandboxMode();
+
       return res.json({
         id: user.id,
         email: user.email,
@@ -103,7 +108,12 @@ export class AuthController {
         avatar_url: user.avatar_url,
         is_pro: user.is_pro,
         plan: user.plan,
-        subscription_status: user.subscription_status
+        subscription_status: user.subscription_status,
+        // Configurações do sistema
+        mp_config: {
+          environment,
+          sandbox: isSandbox
+        }
       });
     } catch (error) {
       console.error('Me error:', error);
