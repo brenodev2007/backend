@@ -47,6 +47,10 @@ export class SubscriptionController {
       const trialEndDate = new Date();
       trialEndDate.setDate(trialEndDate.getDate() + 14);
 
+      // URL de retorno completa
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const backUrl = `${frontendUrl}/settings`;
+
       const preapprovalData = await mercadoPagoService.createSubscription({
         reason: 'Assinatura Stock Savvy Pro',
         auto_recurring: {
@@ -55,6 +59,7 @@ export class SubscriptionController {
           transaction_amount: 50.00,
           currency_id: 'BRL'
         },
+        back_url: backUrl,
         free_trial: {
           frequency: 14,
           frequency_type: 'days'
