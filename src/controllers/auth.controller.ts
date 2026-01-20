@@ -9,7 +9,7 @@ import mercadoPagoService from '../services/mercadopago.service';
 export class AuthController {
   static async register(req: Request, res: Response) {
     try {
-      const { email, password, name, cpf_cnpj } = req.body;
+      const { email, password, name, cpf_cnpj, secretKeyword } = req.body;
 
       const userRepository = AppDataSource.getRepository(User);
 
@@ -21,13 +21,15 @@ export class AuthController {
 
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedKeyword = secretKeyword ? await bcrypt.hash(secretKeyword, 10) : undefined;
 
       // Create user
       const user = userRepository.create({
         email,
         password: hashedPassword,
         name,
-        cpf_cnpj
+        cpf_cnpj,
+        recovery_keyword: hashedKeyword
       });
 
       await userRepository.save(user);
@@ -153,33 +155,36 @@ export class AuthController {
     }
   }
 
-  static async forgotPassword(req: Request, res: Response) {
+  static async resetPasswordWithKeyword(req: Request, res: Response) {
     try {
-      const { email } = req.body;
+      const { email, secretKeyword, newPassword } = req.body;
       const userRepository = AppDataSource.getRepository(User);
 
       const user = await userRepository.findOne({ where: { email } });
       if (!user) {
-        // For security reasons, we should not reveal if the user exists
-        // But for this mock implementation, we'll return success anyway
-        return res.json({ message: 'Se o e-mail existir, você receberá um link de recuperação.' });
+        return res.status(404).json({ error: 'Usuário não encontrado or recovery keyword not set' });
       }
 
-      // Generate reset token (valid for 1 hour)
-      const resetToken = jwt.sign({ userId: user.id, type: 'reset' }, process.env.JWT_SECRET!, {
-        expiresIn: '1h'
-      });
+      if (!user.recovery_keyword) {
+        return res.status(400).json({ error: 'Método de recuperação indisponível para este usuário' });
+      }
 
-      // MOCK EMAIL SENDING
-      console.log('================================================');
-      console.log(`[MOCK EMAIL] Password Reset Link for ${email}:`);
-      console.log(`http://localhost:5173/reset-password?token=${resetToken}`);
-      console.log('================================================');
+      const isValidKeyword = await bcrypt.compare(secretKeyword, user.recovery_keyword);
+      if (!isValidKeyword) {
+        return res.status(401).json({ error: 'Palavra-chave incorreta' });
+      }
 
-      return res.json({ message: 'Se o e-mail existir, você receberá um link de recuperação.' });
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      user.password = hashedPassword;
+      
+      await userRepository.save(user);
+
+      return res.json({ message: 'Senha alterada com sucesso' });
     } catch (error) {
-      console.error('Forgot password error:', error);
-      return res.status(500).json({ error: 'Erro ao processar solicitação' });
+      console.error('Reset password error:', error);
+      return res.status(500).json({ error: 'Erro ao redefinir senha' });
     }
   }
+
+
 }

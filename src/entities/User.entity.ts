@@ -15,6 +15,9 @@ export class User {
   @Column()
   password: string;
 
+  @Column({ nullable: true })
+  recovery_keyword: string;
+
   @Column()
   name: string;
 
