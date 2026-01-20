@@ -168,7 +168,7 @@ export class MercadoPagoService {
         items: payload.items,
         back_urls: payload.back_urls,
         external_reference: payload.external_reference,
-        statement_descriptor: 'STOCK SAVVY' // Descrição na fatura do cartão
+        statement_descriptor: 'ESTOKA' // Descrição na fatura do cartão
       };
 
       // Adiciona payer se fornecido

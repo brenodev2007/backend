@@ -73,7 +73,7 @@ export class PaymentController {
       const preference = await mercadoPagoService.createCheckoutPreference({
         items: [
           {
-            title: 'Stock Savvy - Plano Pro',
+            title: 'Estoka - Plano Pro',
             quantity: 1,
             currency_id: 'BRL',
             unit_price: amount

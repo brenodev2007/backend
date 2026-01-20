@@ -55,7 +55,7 @@ export class SubscriptionController {
       console.log(`[${environment.toUpperCase()}] Criando assinatura para usuário: ${user.email}`);
 
       const preapprovalData = await mercadoPagoService.createSubscription({
-        reason: 'Assinatura Stock Savvy Pro',
+        reason: 'Assinatura Estoka Pro',
         auto_recurring: {
           frequency: 1,
           frequency_type: 'months',

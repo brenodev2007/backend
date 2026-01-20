@@ -1,4 +1,4 @@
-# Stock Savvy Backend
+# Estoka Backend
 
 Backend API construído com Node.js, Express, TypeORM e MySQL.
 
