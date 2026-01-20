@@ -8,7 +8,7 @@ import { Warehouse } from '../entities/Warehouse.entity';
 // Limites de planos
 const PLAN_LIMITS = {
   basic: {
-    max_products: 50,
+    max_products: 10,
     max_warehouses: 2,
     advanced_reports: false,
     priority_support: false
