@@ -19,7 +19,26 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || '*',
+  origin: (origin, callback) => {
+    // Permitir requisições sem origin (como Apps Mobile ou Curl)
+    if (!origin) return callback(null, true);
+
+    // Em desenvolvimento, permitir qualquer localhost
+    if (process.env.NODE_ENV === 'development' && origin.startsWith('http://localhost')) {
+      return callback(null, true);
+    }
+
+    const allowedOrigins = [
+      process.env.FRONTEND_URL
+    ].filter(Boolean);
+
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('🚫 Bloqueado por CORS:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
