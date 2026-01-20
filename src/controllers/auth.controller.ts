@@ -152,4 +152,34 @@ export class AuthController {
       return res.status(500).json({ error: 'Erro ao atualizar perfil' });
     }
   }
+
+  static async forgotPassword(req: Request, res: Response) {
+    try {
+      const { email } = req.body;
+      const userRepository = AppDataSource.getRepository(User);
+
+      const user = await userRepository.findOne({ where: { email } });
+      if (!user) {
+        // For security reasons, we should not reveal if the user exists
+        // But for this mock implementation, we'll return success anyway
+        return res.json({ message: 'Se o e-mail existir, você receberá um link de recuperação.' });
+      }
+
+      // Generate reset token (valid for 1 hour)
+      const resetToken = jwt.sign({ userId: user.id, type: 'reset' }, process.env.JWT_SECRET!, {
+        expiresIn: '1h'
+      });
+
+      // MOCK EMAIL SENDING
+      console.log('================================================');
+      console.log(`[MOCK EMAIL] Password Reset Link for ${email}:`);
+      console.log(`http://localhost:5173/reset-password?token=${resetToken}`);
+      console.log('================================================');
+
+      return res.json({ message: 'Se o e-mail existir, você receberá um link de recuperação.' });
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      return res.status(500).json({ error: 'Erro ao processar solicitação' });
+    }
+  }
 }
