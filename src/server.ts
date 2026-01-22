@@ -12,6 +12,7 @@ import financeRoutes from './routes/finance.routes';
 import subscriptionRoutes, { webhookRouter } from './routes/subscription.routes';
 import categoryRoutes from './routes/category.routes';
 import paymentRoutes from './routes/payment.routes';
+import shopeeRoutes from './routes/shopee.routes';
 
 dotenv.config();
 
@@ -55,6 +56,7 @@ app.use('/api/finance', financeRoutes);
 app.use('/api/subscription', subscriptionRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/shopee', shopeeRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

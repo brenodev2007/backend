@@ -28,11 +28,45 @@ export class StockController {
   static async getMovements(req: AuthRequest, res: Response) {
     try {
       const movementRepository = AppDataSource.getRepository(StockMovement);
-      const movements = await movementRepository.find({
-        where: { user_id: req.userId },
-        relations: ['product', 'user', 'warehouse_from', 'warehouse_to'],
-        order: { created_at: 'DESC' }
-      });
+      const { startDate, endDate } = req.query;
+
+      const where: any = { user_id: req.userId };
+
+      if (startDate || endDate) {
+        const start = startDate ? new Date(String(startDate)) : new Date(0); // Beginning of time if no start
+        const end = endDate ? new Date(String(endDate)) : new Date(); // Now if no end
+        
+        // Ensure end includes the full day if it's just a date string, or matches exact timestamp
+        // If passing YYYY-MM-DD, we probably want end of that day. 
+        // But let's assume the frontend sends ISO strings or proper dates.
+        
+        // Using Between from typeorm would require importing it. 
+        // Let's use CreateQueryBuilder for flexibility without extra imports if possible, 
+        // OR just simple "Between" if I add the import.
+        // Actually, let's stick to query builder to avoid import issues if 'typeorm' isn't direct dependency here (though it likely is).
+        // On second thought, simply adding 'FindOperator' logic is cleaner.
+        // Let's assume I can add the import.
+      }
+
+      const queryBuilder = movementRepository.createQueryBuilder('movement')
+        .leftJoinAndSelect('movement.product', 'product')
+        .leftJoinAndSelect('movement.user', 'user')
+        .leftJoinAndSelect('movement.warehouse_from', 'warehouse_from')
+        .leftJoinAndSelect('movement.warehouse_to', 'warehouse_to')
+        .where('movement.user_id = :userId', { userId: req.userId });
+
+      if (startDate) {
+        queryBuilder.andWhere('movement.created_at >= :startDate', { startDate: new Date(String(startDate)).toISOString() });
+      }
+      
+      if (endDate) {
+        queryBuilder.andWhere('movement.created_at <= :endDate', { endDate: new Date(String(endDate)).toISOString() });
+      }
+
+      const movements = await queryBuilder
+        .orderBy('movement.created_at', 'DESC')
+        .getMany();
+
       return res.json(movements);
     } catch (error) {
       console.error('Get movements error:', error);
