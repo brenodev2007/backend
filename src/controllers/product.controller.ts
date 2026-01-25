@@ -1,6 +1,9 @@
 import { Response } from 'express';
 import { AppDataSource } from '../config/database';
 import { Product } from '../entities/Product.entity';
+import { StockBalance } from '../entities/StockBalance.entity';
+import { StockMovement } from '../entities/StockMovement.entity';
+import { ProductLot } from '../entities/ProductLot.entity';
 import { AuthRequest } from '../middlewares/auth.middleware';
 
 export class ProductController {
@@ -65,15 +68,24 @@ export class ProductController {
     try {
       const { id } = req.params;
       const productRepository = AppDataSource.getRepository(Product);
+      const balanceRepository = AppDataSource.getRepository(StockBalance);
+      const movementRepository = AppDataSource.getRepository(StockMovement);
+      const lotRepository = AppDataSource.getRepository(ProductLot);
       
-      const result = await productRepository.delete({
-        id,
-        user_id: req.userId
+      const product = await productRepository.findOne({
+        where: { id, user_id: req.userId }
       });
 
-      if (result.affected === 0) {
+      if (!product) {
         return res.status(404).json({ error: 'Produto não encontrado' });
       }
+
+      // Delete dependencies
+      await balanceRepository.delete({ product_id: id });
+      await movementRepository.delete({ product_id: id });
+      await lotRepository.delete({ product_id: id });
+
+      await productRepository.remove(product);
 
       return res.status(204).send();
     } catch (error) {

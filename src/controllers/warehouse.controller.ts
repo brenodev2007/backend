@@ -1,6 +1,8 @@
 import { Response } from 'express';
 import { AppDataSource } from '../config/database';
 import { Warehouse } from '../entities/Warehouse.entity';
+import { StockBalance } from '../entities/StockBalance.entity';
+import { StockMovement } from '../entities/StockMovement.entity';
 import { AuthRequest } from '../middlewares/auth.middleware';
 
 export class WarehouseController {
@@ -58,14 +60,26 @@ export class WarehouseController {
     try {
       const { id } = req.params;
       const warehouseRepository = AppDataSource.getRepository(Warehouse);
+      const balanceRepository = AppDataSource.getRepository(StockBalance);
+      const movementRepository = AppDataSource.getRepository(StockMovement);
       
-      const result = await warehouseRepository.delete({
-        id,
-        user_id: req.userId
+      const warehouse = await warehouseRepository.findOne({
+        where: { id, user_id: req.userId }
       });
-      if (result.affected === 0) {
+
+      if (!warehouse) {
         return res.status(404).json({ error: 'Depósito não encontrado' });
       }
+
+      // Delete dependencies
+      await balanceRepository.delete({ warehouse_id: id });
+      
+      // Update movements to remove reference to this warehouse
+      // Cast to any to bypass strict typing if null isn't explicitly allowed in type definition but is in DB
+      await movementRepository.update({ warehouse_from_id: id }, { warehouse_from_id: null as any });
+      await movementRepository.update({ warehouse_to_id: id }, { warehouse_to_id: null as any });
+
+      await warehouseRepository.remove(warehouse);
 
       return res.status(204).send();
     } catch (error) {
