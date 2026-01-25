@@ -89,7 +89,7 @@ export class StockController {
       // Update stock balance
       const { product_id, warehouse_to_id, warehouse_from_id, quantity, type } = req.body;
 
-      if (type === 'IN' && warehouse_to_id) {
+      if ((type === 'IN' || type === 'ADJUST') && warehouse_to_id) {
         const balance = await balanceRepository.findOne({
           where: { product_id, warehouse_id: warehouse_to_id }
         });
@@ -113,6 +113,7 @@ export class StockController {
 
         if (balance) {
           balance.quantity -= quantity;
+          if (balance.quantity < 0) balance.quantity = 0; // Prevent negative stock
           await balanceRepository.save(balance);
         }
       }
@@ -140,19 +141,23 @@ export class StockController {
       }
 
       // Revert the old movement's stock impact
-      await this.revertStockBalance(existingMovement, balanceRepository);
+      await StockController.revertStockBalance(existingMovement, balanceRepository);
 
       // Update the movement
       Object.assign(existingMovement, req.body);
       await movementRepository.save(existingMovement);
 
       // Apply new stock balance
-      await this.applyStockBalance(existingMovement, balanceRepository);
+      await StockController.applyStockBalance(existingMovement, balanceRepository);
 
       return res.json(existingMovement);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Update movement error:', error);
-      return res.status(500).json({ error: 'Erro ao atualizar movimentação' });
+      return res.status(500).json({ 
+        error: 'Erro ao atualizar movimentação',
+        details: error.message,
+        stack: error.stack 
+      });
     }
   }
 
@@ -172,7 +177,7 @@ export class StockController {
       }
 
       // Revert stock balance
-      await this.revertStockBalance(movement, balanceRepository);
+      await StockController.revertStockBalance(movement, balanceRepository);
 
       // Delete the movement
       await movementRepository.remove(movement);
@@ -187,26 +192,26 @@ export class StockController {
   private static async applyStockBalance(movement: StockMovement, balanceRepository: any) {
     const { product_id, warehouse_to_id, warehouse_from_id, quantity, type } = movement;
 
-    if (type === 'IN' && warehouse_to_id) {
-      await this.updateBalance(balanceRepository, product_id, warehouse_to_id, quantity);
+    if ((type === 'IN' || type === 'ADJUST') && warehouse_to_id) {
+      await StockController.updateBalance(balanceRepository, product_id, warehouse_to_id, quantity);
     } else if (type === 'OUT' && warehouse_from_id) {
-      await this.updateBalance(balanceRepository, product_id, warehouse_from_id, -quantity);
+      await StockController.updateBalance(balanceRepository, product_id, warehouse_from_id, -quantity);
     } else if (type === 'TRANSFER' && warehouse_from_id && warehouse_to_id) {
-      await this.updateBalance(balanceRepository, product_id, warehouse_from_id, -quantity);
-      await this.updateBalance(balanceRepository, product_id, warehouse_to_id, quantity);
+      await StockController.updateBalance(balanceRepository, product_id, warehouse_from_id, -quantity);
+      await StockController.updateBalance(balanceRepository, product_id, warehouse_to_id, quantity);
     }
   }
 
   private static async revertStockBalance(movement: StockMovement, balanceRepository: any) {
     const { product_id, warehouse_to_id, warehouse_from_id, quantity, type } = movement;
 
-    if (type === 'IN' && warehouse_to_id) {
-      await this.updateBalance(balanceRepository, product_id, warehouse_to_id, -quantity);
+    if ((type === 'IN' || type === 'ADJUST') && warehouse_to_id) {
+      await StockController.updateBalance(balanceRepository, product_id, warehouse_to_id, -quantity);
     } else if (type === 'OUT' && warehouse_from_id) {
-      await this.updateBalance(balanceRepository, product_id, warehouse_from_id, quantity);
+      await StockController.updateBalance(balanceRepository, product_id, warehouse_from_id, quantity);
     } else if (type === 'TRANSFER' && warehouse_from_id && warehouse_to_id) {
-      await this.updateBalance(balanceRepository, product_id, warehouse_from_id, quantity);
-      await this.updateBalance(balanceRepository, product_id, warehouse_to_id, -quantity);
+      await StockController.updateBalance(balanceRepository, product_id, warehouse_from_id, quantity);
+      await StockController.updateBalance(balanceRepository, product_id, warehouse_to_id, -quantity);
     }
   }
 
