@@ -251,10 +251,42 @@ export class MercadoPagoService {
    * Busca detalhes de uma assinatura existente
    */
   async getSubscription(preapprovalId: string): Promise<PreapprovalResponse> {
+    // Mock para assinaturas manuais ou testes
+    if (preapprovalId.startsWith('MANUAL_')) {
+      console.log(`[Mock] Retornando assinatura fictícia para ID: ${preapprovalId}`);
+      return {
+        id: preapprovalId,
+        init_point: '',
+        status: 'authorized', // Mapeado para 'active' no controller
+        payer_email: 'manual@upgrade.com',
+        auto_recurring: {
+          transaction_amount: 24.99,
+          currency_id: 'BRL'
+        },
+        next_payment_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      };
+    }
+
     try {
       const response = await this.client.get(`/preapproval/${preapprovalId}`);
       return response.data;
     } catch (error: any) {
+      // Em DEV, se não encontrar (404), retorna mock para evitar quebrar o frontend
+      if ((this.environment === 'development' || this.isSandbox) && error.response?.status === 404) {
+        console.warn(`[DEV] Assinatura ${preapprovalId} não encontrada no MP. Retornando mock.`);
+        return {
+          id: preapprovalId,
+          init_point: '',
+          status: 'authorized',
+          payer_email: 'dev@mock.com',
+          auto_recurring: {
+            transaction_amount: 24.99,
+            currency_id: 'BRL'
+          },
+          next_payment_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        };
+      }
+
       console.error('Erro ao buscar assinatura:', error.response?.data || error.message);
       throw new Error('Erro ao buscar assinatura');
     }
@@ -264,11 +296,22 @@ export class MercadoPagoService {
    * Cancela uma assinatura
    */
   async cancelSubscription(preapprovalId: string): Promise<void> {
+    if (preapprovalId.startsWith('MANUAL_')) {
+      console.log(`[Mock] Cancelamento simulado para ID: ${preapprovalId}`);
+      return;
+    }
+
     try {
       await this.client.put(`/preapproval/${preapprovalId}`, {
         status: 'cancelled'
       });
     } catch (error: any) {
+      // Ignora erro 404 em ambiente de desenvolvimento
+      if ((this.environment === 'development' || this.isSandbox) && error.response?.status === 404) {
+        console.warn(`[DEV] Assinatura ${preapprovalId} não encontrada para cancelamento. Ignorando erro.`);
+        return;
+      }
+      
       console.error('Erro ao cancelar assinatura:', error.response?.data || error.message);
       throw new Error('Erro ao cancelar assinatura');
     }
@@ -278,11 +321,14 @@ export class MercadoPagoService {
    * Pausa uma assinatura
    */
   async pauseSubscription(preapprovalId: string): Promise<void> {
+    if (preapprovalId.startsWith('MANUAL_')) return;
+
     try {
       await this.client.put(`/preapproval/${preapprovalId}`, {
         status: 'paused'
       });
     } catch (error: any) {
+      if ((this.environment === 'development' || this.isSandbox) && error.response?.status === 404) return;
       console.error('Erro ao pausar assinatura:', error.response?.data || error.message);
       throw new Error('Erro ao pausar assinatura');
     }
@@ -292,11 +338,20 @@ export class MercadoPagoService {
    * Reativa uma assinatura cancelada/pausada
    */
   async reactivateSubscription(preapprovalId: string): Promise<void> {
+    if (preapprovalId.startsWith('MANUAL_')) {
+      console.log(`[Mock] Reativação simulada para ID: ${preapprovalId}`);
+      return;
+    }
+
     try {
       await this.client.put(`/preapproval/${preapprovalId}`, {
         status: 'authorized'
       });
     } catch (error: any) {
+      if ((this.environment === 'development' || this.isSandbox) && error.response?.status === 404) {
+        console.warn(`[DEV] Assinatura ${preapprovalId} não encontrada para reativação. Ignorando erro.`);
+        return;
+      }
       console.error('Erro ao reativar assinatura:', error.response?.data || error.message);
       throw new Error('Erro ao reativar assinatura');
     }

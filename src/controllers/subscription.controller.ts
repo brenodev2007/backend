@@ -59,7 +59,7 @@ export class SubscriptionController {
         auto_recurring: {
           frequency: 1,
           frequency_type: 'months',
-          transaction_amount: 10.00,
+          transaction_amount: 24.99,
           currency_id: 'BRL'
         },
         back_url: backUrl,
@@ -84,7 +84,7 @@ export class SubscriptionController {
       subscription.preapproval_id = preapprovalData.id;
       subscription.plan = 'pro';
       subscription.status = 'trial';
-      subscription.amount = 10.00;
+      subscription.amount = 24.99;
       subscription.currency = 'BRL';
       subscription.billing_cycle = 'monthly';
       subscription.trial_start = new Date();
@@ -205,6 +205,7 @@ export class SubscriptionController {
 
       // Atualiza no banco
       subscription.status = 'cancelled';
+
       subscription.cancelled_at = new Date();
       subscription.cancellation_reason = reason || '';
       subscription.subscription_end = new Date();
@@ -315,7 +316,7 @@ export class SubscriptionController {
       }
 
       const subscription = user.subscription;
-
+      
       // Busca dados atualizados do Mercado Pago
       const mpData = await mercadoPagoService.getSubscription(subscription.preapproval_id);
 
