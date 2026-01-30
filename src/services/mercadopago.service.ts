@@ -260,7 +260,7 @@ export class MercadoPagoService {
         status: 'authorized', // Mapeado para 'active' no controller
         payer_email: 'manual@upgrade.com',
         auto_recurring: {
-          transaction_amount: 24.99,
+          transaction_amount: 0.01,
           currency_id: 'BRL'
         },
         next_payment_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
@@ -280,7 +280,7 @@ export class MercadoPagoService {
           status: 'authorized',
           payer_email: 'dev@mock.com',
           auto_recurring: {
-            transaction_amount: 24.99,
+            transaction_amount: 0.01,
             currency_id: 'BRL'
           },
           next_payment_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
