@@ -14,9 +14,4 @@ router.post('/create', authMiddleware, PaymentController.createPayment);
 // Buscar status de um pagamento (protegido)
 router.get('/:paymentId', authMiddleware, PaymentController.getPaymentStatus);
 
-/**
- * Webhook (público - não requer autenticação)
- */
-router.post('/webhook', PaymentController.handlePaymentWebhook);
-
 export default router;

@@ -5,13 +5,6 @@ import { User } from '../entities/User.entity';
 import { Subscription } from '../entities/Subscription.entity';
 import mercadoPagoService from '../services/mercadopago.service';
 
-interface WebhookPayload {
-  action: string;
-  type: string;
-  data: {
-    id: string;
-  };
-}
 
 export class PaymentController {
   /**
@@ -144,97 +137,5 @@ export class PaymentController {
       });
     }
   }
-
-  /**
-   * Webhook para notificações do Mercado Pago
-   */
-  static async handlePaymentWebhook(req: any, res: Response) {
-    try {
-      const payload: WebhookPayload = req.body;
-      console.log('=== WEBHOOK RECEBIDO ===');
-      console.log(JSON.stringify(payload, null, 2));
-
-      // Verifica tipo de notificação
-      if (payload.type === 'payment') {
-        const paymentId = payload.data.id;
-
-        // Busca detalhes do pagamento
-        const paymentDetails = await mercadoPagoService.getPaymentDetails(paymentId);
-
-        console.log('Detalhes do pagamento:');
-        console.log(`- ID: ${paymentDetails.id}`);
-        console.log(`- Status: ${paymentDetails.status}`);
-        console.log(`- Referência: ${paymentDetails.external_reference}`);
-        console.log(`- Valor: ${paymentDetails.transaction_amount} ${paymentDetails.currency_id}`);
-
-        // Extrai user_id da referência externa
-        const externalRef = paymentDetails.external_reference;
-        const userIdMatch = externalRef?.match(/payment_(.+?)_/);
-
-        if (userIdMatch && userIdMatch[1]) {
-          const userId = userIdMatch[1]; // UUID string
-
-          const userRepository = AppDataSource.getRepository(User);
-          const subscriptionRepository = AppDataSource.getRepository(Subscription);
-
-          const user = await userRepository.findOne({
-            where: { id: userId },
-            relations: ['subscription']
-          });
-
-          if (user) {
-            // Se pagamento aprovado, ativa a assinatura
-            if (paymentDetails.status === 'approved' && paymentDetails.transaction_amount >= 0.01) {
-              let subscription = user.subscription;
-
-              if (!subscription) {
-                subscription = subscriptionRepository.create({
-                  user_id: userId,
-                  user: user
-                });
-              }
-
-              // Ativa assinatura imediatamente (sem trial)
-              const now = new Date();
-              const nextBilling = new Date();
-              nextBilling.setMonth(nextBilling.getMonth() + 1); // Próxima cobrança em 1 mês
-
-              subscription.plan = 'pro';
-              subscription.status = 'active'; // ATIVO imediatamente
-              subscription.amount = paymentDetails.transaction_amount;
-              subscription.currency = paymentDetails.currency_id;
-              subscription.billing_cycle = 'monthly';
-              subscription.subscription_start = now;
-              subscription.next_billing_date = nextBilling;
-
-              await subscriptionRepository.save(subscription);
-
-              // Atualiza usuário
-              user.is_pro = true;
-              user.plan = 'pro';
-              user.subscription_status = 'active'; // ATIVO
-              await userRepository.save(user);
-
-              console.log(`✅ Assinatura PRO ativada para usuário ${userId}`);
-              console.log(`✅ Plano: ${subscription.plan} | Status: ${subscription.status}`);
-              console.log(`✅ Próxima cobrança: ${nextBilling.toLocaleDateString('pt-BR')}`);
-            } else {
-              console.log(`⚠️ Pagamento não aprovado ou sem valor: ${paymentDetails.status}`);
-            }
-          } else {
-            console.log(`⚠️ Usuário não encontrado: ${userId}`);
-          }
-        } else {
-          console.log('⚠️ Não foi possível extrair user_id da referência externa');
-        }
-      }
-
-      // Sempre retorna 200 para evitar retry do Mercado Pago
-      return res.status(200).json({ received: true });
-    } catch (error: any) {
-      console.error('Erro ao processar webhook:', error);
-      // Sempre retorna 200 para evitar retry do Mercado Pago
-      return res.status(200).json({ received: true, error: error.message });
-    }
-  }
 }
+

@@ -16,8 +16,3 @@ router.post('/sync', SubscriptionController.syncSubscriptionStatus);
 router.get('/limits', getPlanLimits);
 
 export default router;
-
-export const webhookRouter = Router();
-// Webhook não requer autenticação
-webhookRouter.post('/webhook', SubscriptionController.handleWebhook);
-

@@ -5,13 +5,6 @@ import { User } from '../entities/User.entity';
 import { Subscription } from '../entities/Subscription.entity';
 import mercadoPagoService from '../services/mercadopago.service';
 
-interface WebhookPayload {
-  action: string;
-  type: string;
-  data: {
-    id: string;
-  };
-}
 
 export class SubscriptionController {
   /**
@@ -348,74 +341,5 @@ export class SubscriptionController {
       });
     }
   }
-
-  /**
-   * Webhook para notificações do Mercado Pago
-   */
-  static async handleWebhook(req: any, res: Response) {
-    try {
-      const payload: WebhookPayload = req.body;
-      console.log('Webhook recebido:', JSON.stringify(payload, null, 2));
-
-      // Verifica tipo de notificação
-      if (payload.type === 'subscription_preapproval') {
-        const preapprovalId = payload.data.id;
-
-        const subscriptionRepository = AppDataSource.getRepository(Subscription);
-        const userRepository = AppDataSource.getRepository(User);
-
-        // Busca assinatura no banco
-        const subscription = await subscriptionRepository.findOne({
-          where: { preapproval_id: preapprovalId },
-          relations: ['user']
-        });
-
-        if (!subscription) {
-          console.log('Assinatura não encontrada para preapproval_id:', preapprovalId);
-          return res.status(200).json({ received: true });
-        }
-
-        // Busca dados atualizados do Mercado Pago
-        const mpData = await mercadoPagoService.getSubscription(preapprovalId);
-
-        // Atualiza status baseado na ação
-        if (payload.action === 'created') {
-          subscription.status = 'trial';
-        } else if (payload.action === 'payment.created') {
-          subscription.status = 'active';
-          
-          // Atualiza trial_end se estava em trial
-          if (subscription.status === 'trial') {
-            subscription.trial_end = new Date();
-          }
-        } else if (payload.action === 'cancelled' || mpData.status === 'cancelled') {
-          subscription.status = 'cancelled';
-          subscription.cancelled_at = new Date();
-        } else if (payload.action === 'paused' || mpData.status === 'paused') {
-          subscription.status = 'paused';
-        }
-
-        // Atualiza próxima data de cobrança
-        if (mpData.next_payment_date) {
-          subscription.next_billing_date = new Date(mpData.next_payment_date);
-        }
-
-        await subscriptionRepository.save(subscription);
-
-        // Atualiza usuário
-        const user = subscription.user;
-        user.is_pro = ['active', 'trial', 'authorized'].includes(subscription.status);
-        user.subscription_status = subscription.status;
-        await userRepository.save(user);
-
-        console.log('Assinatura atualizada:', subscription.id, 'Status:', subscription.status);
-      }
-
-      return res.status(200).json({ received: true });
-    } catch (error: any) {
-      console.error('Erro ao processar webhook:', error);
-      // Sempre retorna 200 para evitar retry do Mercado Pago
-      return res.status(200).json({ received: true, error: error.message });
-    }
-  }
 }
+

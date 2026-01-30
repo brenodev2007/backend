@@ -9,10 +9,11 @@ import productRoutes from './routes/product.routes';
 import warehouseRoutes from './routes/warehouse.routes';
 import stockRoutes from './routes/stock.routes';
 import financeRoutes from './routes/finance.routes';
-import subscriptionRoutes, { webhookRouter } from './routes/subscription.routes';
+import subscriptionRoutes from './routes/subscription.routes';
 import categoryRoutes from './routes/category.routes';
 import paymentRoutes from './routes/payment.routes';
 import shopeeRoutes from './routes/shopee.routes';
+import webhookRoutes from './routes/webhook.routes';
 
 dotenv.config();
 
@@ -45,7 +46,7 @@ app.use(cors({
 app.use(express.json());
 
 // Webhook route (antes das outras para não precisar de autenticação)
-app.use('/api/subscription', webhookRouter);
+app.use('/api/webhook', webhookRoutes);
 
 // Routes
 app.use('/api/auth', authRoutes);
