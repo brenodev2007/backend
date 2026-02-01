@@ -72,16 +72,14 @@ export class WebhookService {
       console.log(`- Referência: ${paymentDetails.external_reference}`);
       console.log(`- Valor: ${paymentDetails.transaction_amount} ${paymentDetails.currency_id}`);
 
-      // Extrai user_id da referência externa (formato: payment_<userId>_<timestamp>)
-      const externalRef = paymentDetails.external_reference;
-      const userIdMatch = externalRef?.match(/payment_(.+?)_/);
+      // External reference agora é apenas o userId
+      const userId = paymentDetails.external_reference;
 
-      if (!userIdMatch || !userIdMatch[1]) {
-        console.log('⚠️ Não foi possível extrair user_id da referência externa');
+      if (!userId) {
+        console.log('⚠️ external_reference não encontrado');
         return;
       }
 
-      const userId = userIdMatch[1];
       const userRepository = AppDataSource.getRepository(User);
       const subscriptionRepository = AppDataSource.getRepository(Subscription);
 
@@ -96,7 +94,7 @@ export class WebhookService {
       }
 
       // Se pagamento aprovado, ativa a assinatura
-      if (paymentDetails.status === 'approved' && paymentDetails.transaction_amount >= 0.01) {
+      if (paymentDetails.status === 'approved') {
         let subscription = user.subscription;
 
         if (!subscription) {
@@ -106,18 +104,19 @@ export class WebhookService {
           });
         }
 
-        // Ativa assinatura imediatamente
+        // Ativa assinatura por 30 dias
         const now = new Date();
-        const nextBilling = new Date();
-        nextBilling.setMonth(nextBilling.getMonth() + 1);
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + 30);
 
         subscription.plan = 'pro';
         subscription.status = 'active';
         subscription.amount = paymentDetails.transaction_amount;
         subscription.currency = paymentDetails.currency_id;
-        subscription.billing_cycle = 'monthly';
+        subscription.billing_cycle = 'one-time';
         subscription.subscription_start = now;
-        subscription.next_billing_date = nextBilling;
+        subscription.subscription_end = endDate;
+        subscription.payment_method = paymentDetails.payment_method_id;
 
         await subscriptionRepository.save(subscription);
 
@@ -129,9 +128,15 @@ export class WebhookService {
 
         console.log(`✅ Assinatura PRO ativada para usuário ${userId}`);
         console.log(`✅ Plano: ${subscription.plan} | Status: ${subscription.status}`);
-        console.log(`✅ Próxima cobrança: ${nextBilling.toLocaleDateString('pt-BR')}`);
+        console.log(`✅ Válido até: ${endDate.toLocaleDateString('pt-BR')}`);
+      } else if (paymentDetails.status === 'rejected' || paymentDetails.status === 'cancelled') {
+        if (user.subscription) {
+          user.subscription.status = 'cancelled';
+          await subscriptionRepository.save(user.subscription);
+        }
+        console.log(`❌ Pagamento ${paymentDetails.status} para usuário ${userId}`);
       } else {
-        console.log(`⚠️ Pagamento não aprovado ou sem valor: ${paymentDetails.status}`);
+        console.log(`⏳ Pagamento pendente: ${paymentDetails.status}`);
       }
     } catch (error: any) {
       console.error('❌ Erro ao processar notificação de pagamento:', error);

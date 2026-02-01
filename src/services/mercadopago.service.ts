@@ -168,7 +168,11 @@ export class MercadoPagoService {
         items: payload.items,
         back_urls: payload.back_urls,
         external_reference: payload.external_reference,
-        statement_descriptor: 'ESTOKA' // Descrição na fatura do cartão
+        statement_descriptor: 'ESTOKA',
+        payment_methods: {
+          installments: 12,
+          default_installments: 1
+        }
       };
 
       // Adiciona payer se fornecido

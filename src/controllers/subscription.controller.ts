@@ -36,32 +36,35 @@ export class SubscriptionController {
         return res.status(400).json({ error: 'Você já possui uma assinatura ativa' });
       }
 
-      // Cria preapproval no Mercado Pago
-      const trialEndDate = new Date();
-      trialEndDate.setDate(trialEndDate.getDate() + 14);
-
-      // URL de retorno completa
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-      const backUrl = `${frontendUrl}/settings`;
+      const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
       const environment = mercadoPagoService.getEnvironment();
 
-      console.log(`[${environment.toUpperCase()}] Criando assinatura para usuário: ${user.email}`);
+      console.log(`[${environment.toUpperCase()}] Criando pagamento para usuário: ${user.email}`);
 
-      const preapprovalData = await mercadoPagoService.createSubscription({
-        reason: 'Assinatura Estoka Pro',
-        auto_recurring: {
-          frequency: 1,
-          frequency_type: 'months',
-          transaction_amount: 0.01,
-          currency_id: 'BRL'
+      // Cria checkout preference (aceita cartão, PIX, boleto, etc.)
+      const preferenceData = await mercadoPagoService.createCheckoutPreference({
+        items: [
+          {
+            title: 'Estoka Pro - 30 dias',
+            quantity: 1,
+            currency_id: 'BRL',
+            unit_price: 5.00 // Valor mínimo para habilitar todos os métodos
+          }
+        ],
+        payer: {
+          email: email || user.email,
+          name: user.name,
+          surname: ''
         },
-        back_url: backUrl,
-        free_trial: {
-          frequency: 14,
-          frequency_type: 'days'
+        external_reference: userId,
+        back_urls: {
+          success: `${frontendUrl}/payment/success`,
+          failure: `${frontendUrl}/payment/failure`,
+          pending: `${frontendUrl}/payment/pending`
         },
-        payer_email: email || user.email,
-        status: 'authorized'
+        auto_return: 'approved',
+        notification_url: `${backendUrl}/api/webhook`
       });
 
       // Cria ou atualiza registro de assinatura
@@ -74,32 +77,29 @@ export class SubscriptionController {
         });
       }
 
-      subscription.preapproval_id = preapprovalData.id;
+      subscription.preapproval_id = preferenceData.id;
       subscription.plan = 'pro';
-      subscription.status = 'trial';
-      subscription.amount = 0.01;
+      subscription.status = 'pending';
+      subscription.amount = 5.00;
       subscription.currency = 'BRL';
-      subscription.billing_cycle = 'monthly';
-      subscription.trial_start = new Date();
-      subscription.trial_end = trialEndDate;
+      subscription.billing_cycle = 'one-time';
       subscription.subscription_start = new Date();
+      
+      // Define período de 30 dias
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + 30);
+      subscription.subscription_end = endDate;
 
       await subscriptionRepository.save(subscription);
 
-      // Atualiza campos do usuário para acesso rápido
-      user.is_pro = true;
-      user.plan = 'pro';
-      user.subscription_status = 'trial';
-      user.subscription_id = preapprovalData.id;
-      await userRepository.save(user);
-
       return res.json({ 
         success: true,
-        init_point: preapprovalData.init_point,
+        init_point: preferenceData.init_point,
+        sandbox_init_point: preferenceData.sandbox_init_point,
+        payment_id: preferenceData.id,
         subscription: {
           id: subscription.id,
-          status: subscription.status,
-          trial_end: subscription.trial_end
+          status: subscription.status
         },
         environment
       });
