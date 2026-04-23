@@ -12,6 +12,7 @@ import financeRoutes from './routes/finance.routes';
 import categoryRoutes from './routes/category.routes';
 import shopeeRoutes from './routes/shopee.routes';
 import adminRoutes from './routes/admin.routes';
+import notificationRoutes from './routes/notification.routes';
 
 dotenv.config();
 
@@ -23,16 +24,15 @@ app.use(cors({
     // Permitir requisições sem origin (como Apps Mobile ou Curl)
     if (!origin) return callback(null, true);
 
-    // Em desenvolvimento, permitir qualquer localhost
-    if (process.env.NODE_ENV === 'development' && origin.startsWith('http://localhost')) {
-      return callback(null, true);
-    }
-
     const allowedOrigins = [
-      process.env.FRONTEND_URL
+      process.env.FRONTEND_URL,
+      'http://localhost:5173',
+      'http://localhost:8080',
+      'http://localhost:3000'
     ].filter(Boolean);
 
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    // Se o origin estiver na lista ou for localhost em desenvolvimento
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.startsWith('http://localhost')) {
       callback(null, true);
     } else {
       console.log('🚫 Bloqueado por CORS:', origin);
@@ -52,6 +52,7 @@ app.use('/api/finance', financeRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/shopee', shopeeRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
