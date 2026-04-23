@@ -4,12 +4,17 @@ import { User } from '../entities/User.entity';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { AuthRequest } from '../middlewares/auth.middleware';
-import mercadoPagoService from '../services/mercadopago.service';
 
 export class AuthController {
   static async register(req: Request, res: Response) {
     try {
       const { email, password, name, cpf_cnpj, secretKeyword } = req.body;
+
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: 'Formato de email inválido' });
+      }
 
       const userRepository = AppDataSource.getRepository(User);
 
@@ -78,8 +83,8 @@ export class AuthController {
           id: user.id,
           email: user.email,
           name: user.name,
-          is_pro: user.is_pro,
-          plan: user.plan
+          is_active: user.is_active,
+          role: user.role
         },
         token
       });
@@ -98,24 +103,14 @@ export class AuthController {
         return res.status(404).json({ error: 'Usuário não encontrado' });
       }
 
-      // Get environment info
-      const environment = mercadoPagoService.getEnvironment();
-      const isSandbox = mercadoPagoService.isSandboxMode();
-
       return res.json({
         id: user.id,
         email: user.email,
         name: user.name,
         cpf_cnpj: user.cpf_cnpj,
         avatar_url: user.avatar_url,
-        is_pro: user.is_pro,
-        plan: user.plan,
-        subscription_status: user.subscription_status,
-        // Configurações do sistema
-        mp_config: {
-          environment,
-          sandbox: isSandbox
-        }
+        is_active: user.is_active,
+        role: user.role
       });
     } catch (error) {
       console.error('Me error:', error);
@@ -146,8 +141,8 @@ export class AuthController {
         name: user.name,
         cpf_cnpj: user.cpf_cnpj,
         avatar_url: user.avatar_url,
-        is_pro: user.is_pro,
-        plan: user.plan
+        is_active: user.is_active,
+        role: user.role
       });
     } catch (error) {
       console.error('Update profile error:', error);

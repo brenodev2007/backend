@@ -1,8 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, OneToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { Product } from './Product.entity';
 import { StockMovement } from './StockMovement.entity';
 import { FinancialTransaction } from './FinancialTransaction.entity';
-import { Subscription } from './Subscription.entity';
 
 @Entity('users')
 export class User {
@@ -27,17 +26,11 @@ export class User {
   @Column({ nullable: true })
   avatar_url: string;
 
-  @Column({ nullable: true })
-  plan: string;
-
   @Column({ default: false })
-  is_pro: boolean;
+  is_active: boolean;
 
-  @Column({ nullable: true })
-  subscription_id: string;
-
-  @Column({ nullable: true })
-  subscription_status: string;
+  @Column({ default: 'user' })
+  role: string;
 
   @CreateDateColumn()
   created_at: Date;
@@ -53,7 +46,4 @@ export class User {
 
   @OneToMany(() => FinancialTransaction, transaction => transaction.user)
   transactions: FinancialTransaction[];
-
-  @OneToOne(() => Subscription, subscription => subscription.user, { nullable: true })
-  subscription: Subscription;
 }
