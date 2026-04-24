@@ -127,4 +127,125 @@ export class ShopeeController {
       return res.status(500).json({ error: 'Erro ao buscar pedidos da Shopee' });
     }
   }
+
+  static async createOrder(req: AuthRequest, res: Response) {
+    try {
+      const orderRepository = AppDataSource.getRepository(ShopeeOrder);
+      const order = orderRepository.create({
+        ...req.body,
+        purchase_date: new Date(req.body.purchase_date),
+        estimated_delivery: req.body.estimated_delivery ? new Date(req.body.estimated_delivery) : undefined,
+      });
+
+      await orderRepository.save(order);
+      return res.status(201).json(order);
+    } catch (error) {
+      console.error('Create shopee order error:', error);
+      return res.status(500).json({ error: 'Erro ao criar pedido da Shopee' });
+    }
+  }
+
+  static async updateOrder(req: AuthRequest, res: Response) {
+    try {
+      const { id } = req.params;
+      const orderRepository = AppDataSource.getRepository(ShopeeOrder);
+      
+      const order = await orderRepository.findOne({ where: { id } });
+      if (!order) return res.status(404).json({ error: 'Pedido não encontrado' });
+
+      orderRepository.merge(order, req.body);
+      
+      if (req.body.purchase_date) order.purchase_date = new Date(req.body.purchase_date);
+      if (req.body.estimated_delivery) order.estimated_delivery = new Date(req.body.estimated_delivery);
+      if (req.body.actual_delivery) order.actual_delivery = new Date(req.body.actual_delivery);
+
+      await orderRepository.save(order);
+      return res.json(order);
+    } catch (error) {
+      console.error('Update shopee order error:', error);
+      return res.status(500).json({ error: 'Erro ao atualizar pedido da Shopee' });
+    }
+  }
+
+  static async deleteOrder(req: AuthRequest, res: Response) {
+    try {
+      const { id } = req.params;
+      const orderRepository = AppDataSource.getRepository(ShopeeOrder);
+      await orderRepository.delete(id);
+      return res.status(204).send();
+    } catch (error) {
+      console.error('Delete shopee order error:', error);
+      return res.status(500).json({ error: 'Erro ao excluir pedido da Shopee' });
+    }
+  }
+
+  static async deleteMultipleOrders(req: AuthRequest, res: Response) {
+    try {
+      const { ids } = req.body;
+      const orderRepository = AppDataSource.getRepository(ShopeeOrder);
+      await orderRepository.delete(ids);
+      return res.status(204).send();
+    } catch (error) {
+      console.error('Delete multiple shopee orders error:', error);
+      return res.status(500).json({ error: 'Erro ao excluir múltiplos pedidos da Shopee' });
+    }
+  }
+
+  static async getAccounts(req: AuthRequest, res: Response) {
+    try {
+      const accountRepository = AppDataSource.getRepository(ShopeeAccount);
+      const accounts = await accountRepository.find({
+        where: { user_id: req.userId },
+        order: { created_at: 'DESC' }
+      });
+      return res.json(accounts);
+    } catch (error) {
+      console.error('Get shopee accounts error:', error);
+      return res.status(500).json({ error: 'Erro ao buscar contas da Shopee' });
+    }
+  }
+
+  static async createAccount(req: AuthRequest, res: Response) {
+    try {
+      const accountRepository = AppDataSource.getRepository(ShopeeAccount);
+      const account = accountRepository.create({
+        ...req.body,
+        user_id: req.userId
+      });
+      await accountRepository.save(account);
+      return res.status(201).json(account);
+    } catch (error) {
+      console.error('Create shopee account error:', error);
+      return res.status(500).json({ error: 'Erro ao criar conta da Shopee' });
+    }
+  }
+
+  static async setActiveAccount(req: AuthRequest, res: Response) {
+    try {
+      const { id } = req.params;
+      const accountRepository = AppDataSource.getRepository(ShopeeAccount);
+
+      // Deactivate all first
+      await accountRepository.update({ user_id: req.userId }, { is_active: false });
+      // Activate selected
+      await accountRepository.update({ id, user_id: req.userId }, { is_active: true });
+
+      return res.status(204).send();
+    } catch (error) {
+      console.error('Set active shopee account error:', error);
+      return res.status(500).json({ error: 'Erro ao definir conta ativa' });
+    }
+  }
+
+  static async deleteAccount(req: AuthRequest, res: Response) {
+    try {
+      const { id } = req.params;
+      const accountRepository = AppDataSource.getRepository(ShopeeAccount);
+      await accountRepository.delete({ id, user_id: req.userId });
+      return res.status(204).send();
+    } catch (error) {
+      console.error('Delete shopee account error:', error);
+      return res.status(500).json({ error: 'Erro ao excluir conta da Shopee' });
+    }
+  }
 }
