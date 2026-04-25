@@ -8,7 +8,7 @@ import authRoutes from './routes/auth.routes';
 import productRoutes from './routes/product.routes';
 import warehouseRoutes from './routes/warehouse.routes';
 import stockRoutes from './routes/stock.routes';
-import financeRoutes from './routes/finance.routes';
+
 import categoryRoutes from './routes/category.routes';
 import shopeeRoutes from './routes/shopee.routes';
 import adminRoutes from './routes/admin.routes';
@@ -48,7 +48,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/warehouses', warehouseRoutes);
 app.use('/api/stock', stockRoutes);
-app.use('/api/finance', financeRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/shopee', shopeeRoutes);
 app.use('/api/admin', adminRoutes);
