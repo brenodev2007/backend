@@ -2,6 +2,8 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 
 export enum ShopeeShipmentStatus {
   AGUARDANDO_ENVIO = 'AGUARDANDO_ENVIO',
+  EMPACOTADO = 'EMPACOTADO',
+  ETIQUETADO = 'ETIQUETADO',
   ENVIADO = 'ENVIADO',
   EM_TRANSPORTE = 'EM_TRANSPORTE',
   ENTREGUE = 'ENTREGUE',
@@ -16,6 +18,9 @@ export class ShopeeOrder {
 
   @Column({ nullable: true })
   account_id: string;
+
+  @Column({ nullable: true })
+  user_id: string;
 
   @Column({ unique: true })
   order_sn: string;

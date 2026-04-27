@@ -8,6 +8,7 @@ router.use(authMiddleware);
 
 router.get('/stats', ShopeeController.getStats);
 router.get('/orders', ShopeeController.getOrders);
+router.get('/orders/:id', ShopeeController.getOrderById);
 router.post('/orders', ShopeeController.createOrder);
 router.put('/orders/:id', ShopeeController.updateOrder);
 router.delete('/orders/:id', ShopeeController.deleteOrder);
