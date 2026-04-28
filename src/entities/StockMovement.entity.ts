@@ -42,6 +42,9 @@ export class StockMovement {
   @Column({ nullable: true })
   reason: string;
 
+  @Column({ nullable: true })
+  platform: string;
+
   @Column()
   user_id: string;
 
