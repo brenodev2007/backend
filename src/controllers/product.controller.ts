@@ -25,6 +25,16 @@ export class ProductController {
     try {
       const productRepository = AppDataSource.getRepository(Product);
       
+      // Check if SKU already exists for this user
+      if (req.body.sku) {
+        const existing = await productRepository.findOne({
+          where: { sku: req.body.sku, user_id: req.userId }
+        });
+        if (existing) {
+          return res.status(400).json({ error: 'SKU já cadastrado' });
+        }
+      }
+
       const product = productRepository.create({
         ...req.body,
         user_id: req.userId
@@ -52,6 +62,16 @@ export class ProductController {
 
       if (!product) {
         return res.status(404).json({ error: 'Produto não encontrado' });
+      }
+
+      // Check if SKU already exists for this user (excluding current product)
+      if (req.body.sku && req.body.sku !== product.sku) {
+        const existing = await productRepository.findOne({
+          where: { sku: req.body.sku, user_id: req.userId }
+        });
+        if (existing) {
+          return res.status(400).json({ error: 'SKU já cadastrado' });
+        }
       }
 
       productRepository.merge(product, req.body);

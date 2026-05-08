@@ -1,10 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn, Unique } from 'typeorm';
 import { User } from './User.entity';
 import { Category } from './Category.entity';
 import { StockBalance } from './StockBalance.entity';
 import { ProductLot } from './ProductLot.entity';
 
 @Entity('products')
+@Unique('UQ_product_sku_user', ['sku', 'user_id'])
 export class Product {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -12,7 +13,7 @@ export class Product {
   @Column()
   name: string;
 
-  @Column({ unique: true })
+  @Column()
   sku: string;
 
   @Column({ nullable: true })
